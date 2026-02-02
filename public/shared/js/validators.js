@@ -464,18 +464,26 @@ export function sanitizeInput(input) {
     return '';
   }
   
-  return input
-    .trim()
-    // Remove HTML tags
-    .replace(/[<>]/g, '')
-    // Remove dangerous URL schemes (javascript:, data:, vbscript:)
-    .replace(/javascript:/gi, '')
-    .replace(/data:/gi, '')
-    .replace(/vbscript:/gi, '')
-    // Remove event handlers - use multiple passes to catch nested patterns
-    .replace(/on\w+\s*=/gi, '')
-    .replace(/on\w+\s*=/gi, '') // Second pass to catch patterns like "oonn"
-    .replace(/on\w+\s*=/gi, ''); // Third pass for safety
+  let sanitized = input.trim();
+  
+  // Remove HTML tags
+  sanitized = sanitized.replace(/[<>]/g, '');
+  
+  // Remove dangerous URL schemes
+  const dangerousSchemes = ['javascript:', 'data:', 'vbscript:', 'file:'];
+  dangerousSchemes.forEach(scheme => {
+    const regex = new RegExp(scheme, 'gi');
+    sanitized = sanitized.replace(regex, '');
+  });
+  
+  // Remove event handlers - use while loop until no more matches
+  let previousLength;
+  do {
+    previousLength = sanitized.length;
+    sanitized = sanitized.replace(/on\w+\s*=/gi, '');
+  } while (sanitized.length !== previousLength);
+  
+  return sanitized;
 }
 
 /**
