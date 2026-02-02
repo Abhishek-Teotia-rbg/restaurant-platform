@@ -1,0 +1,58 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.role == 'admin';
+    }
+    
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidImageSize() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB
+    }
+    
+    // Restaurant logos
+    match /restaurants/{restaurantId}/logo/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidImageType() && isValidImageSize();
+    }
+    
+    // Menu item images
+    match /menuItems/{itemId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidImageType() && isValidImageSize();
+    }
+    
+    // Review images
+    match /reviews/{reviewId}/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && isValidImageType() && isValidImageSize();
+    }
+    
+    // Banners
+    match /banners/{bannerId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidImageType() && isValidImageSize();
+    }
+    
+    // Invoices (PDFs)
+    match /invoices/{orderId}/{fileName} {
+      allow read: if isSignedIn();
+      allow write: if false; // Only Cloud Functions can write
+    }
+    
+    // User profile photos
+    match /users/{userId}/photo/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == userId && isValidImageType() && isValidImageSize();
+    }
+  }
+}
