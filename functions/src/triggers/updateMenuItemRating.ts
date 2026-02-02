@@ -136,7 +136,13 @@ export const updateMenuItemRatingOnEdit = functions.firestore
 
       // Recalculate rating (remove old, add new)
       const currentRating = menuItem.rating || 0;
-      const totalRatings = menuItem.totalRatings || 1;
+      const totalRatings = menuItem.totalRatings || 0;
+      
+      if (totalRatings === 0) {
+        console.error(`Menu item ${menuItemId} has zero total ratings`);
+        return null;
+      }
+      
       const oldTotalRating = currentRating * totalRatings;
       const newTotalRating =
         oldTotalRating - beforeReview.rating + afterReview.rating;

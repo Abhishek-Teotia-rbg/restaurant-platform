@@ -116,20 +116,18 @@ export const issueRefund = functions.https.onRequest(async (req, res) => {
         updatedAt: admin.firestore.Timestamp.now(),
       });
 
-      // Credit wallet if partial refund
-      if (refundAmount < order.total) {
-        const walletAmount = refundAmount;
-        await db.collection('users').doc(order.userId).update({
-          'wallet.balance': admin.firestore.FieldValue.increment(walletAmount),
-          'wallet.transactions': admin.firestore.FieldValue.arrayUnion({
-            id: refundId,
-            type: 'credit',
-            amount: walletAmount,
-            description: `Refund for order ${order.orderNumber}`,
-            timestamp: admin.firestore.Timestamp.now(),
-          }),
-        });
-      }
+      // Credit wallet for refund
+      const walletAmount = refundAmount;
+      await db.collection('users').doc(order.userId).update({
+        'wallet.balance': admin.firestore.FieldValue.increment(walletAmount),
+        'wallet.transactions': admin.firestore.FieldValue.arrayUnion({
+          id: refundId,
+          type: 'credit',
+          amount: walletAmount,
+          description: `Refund for order ${order.orderNumber}`,
+          timestamp: admin.firestore.Timestamp.now(),
+        }),
+      });
 
       // Restore inventory
       for (const item of order.items) {

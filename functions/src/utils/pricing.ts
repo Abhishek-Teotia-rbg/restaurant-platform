@@ -3,6 +3,8 @@ import { db } from './admin';
 
 /**
  * GST rate (18%)
+ * Note: This rate may need to be updated if tax regulations change.
+ * Consider making this configurable via environment variables for production.
  */
 const GST_RATE = 0.18;
 
