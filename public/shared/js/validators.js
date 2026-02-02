@@ -96,15 +96,42 @@ export function isValidPinCode(pinCode) {
 }
 
 /**
- * Validates URL
+ * Validates URL with strict scheme checking
  * @param {string} url - URL to validate
+ * @param {Array<string>} [allowedSchemes=['http', 'https']] - Allowed URL schemes
  * @returns {boolean} True if valid
  */
-export function isValidUrl(url) {
+export function isValidUrl(url, allowedSchemes = ['http', 'https']) {
   if (!url || typeof url !== 'string') {
     return false;
   }
-  return REGEX_PATTERNS.URL.test(url.trim());
+  
+  const trimmed = url.trim();
+  
+  // Check against regex pattern
+  if (!REGEX_PATTERNS.URL.test(trimmed)) {
+    return false;
+  }
+  
+  try {
+    const urlObj = new URL(trimmed);
+    
+    // Validate scheme is in allowed list
+    if (!allowedSchemes.includes(urlObj.protocol.replace(':', ''))) {
+      return false;
+    }
+    
+    // Additional security checks
+    // Block data:, javascript:, vbscript:, file: schemes
+    const dangerousSchemes = ['data', 'javascript', 'vbscript', 'file'];
+    if (dangerousSchemes.includes(urlObj.protocol.replace(':', ''))) {
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 /**
@@ -428,7 +455,7 @@ export function validateForm(data, schema) {
 }
 
 /**
- * Sanitizes string input (removes dangerous characters)
+ * Sanitizes string input (removes dangerous characters and patterns)
  * @param {string} input - Input to sanitize
  * @returns {string} Sanitized string
  */
@@ -439,9 +466,16 @@ export function sanitizeInput(input) {
   
   return input
     .trim()
+    // Remove HTML tags
     .replace(/[<>]/g, '')
+    // Remove dangerous URL schemes (javascript:, data:, vbscript:)
     .replace(/javascript:/gi, '')
-    .replace(/on\w+=/gi, '');
+    .replace(/data:/gi, '')
+    .replace(/vbscript:/gi, '')
+    // Remove event handlers - use multiple passes to catch nested patterns
+    .replace(/on\w+\s*=/gi, '')
+    .replace(/on\w+\s*=/gi, '') // Second pass to catch patterns like "oonn"
+    .replace(/on\w+\s*=/gi, ''); // Third pass for safety
 }
 
 /**
