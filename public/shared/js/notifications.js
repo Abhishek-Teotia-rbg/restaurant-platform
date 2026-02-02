@@ -393,9 +393,14 @@ export function showAlert(message, title = 'Alert') {
 async function setupFCM(messaging) {
   try {
     // Get FCM token
-    const currentToken = await getToken(messaging, {
-      vapidKey: 'YOUR_VAPID_KEY' // Replace with your VAPID key
-    });
+    // VAPID key should be configured in environment or firebase-config
+    const vapidKey = window.FIREBASE_CONFIG?.vapidKey;
+    if (!vapidKey) {
+      console.warn('VAPID key not configured. FCM notifications will not work.');
+      return;
+    }
+    
+    const currentToken = await getToken(messaging, { vapidKey });
     
     if (currentToken) {
       fcmToken = currentToken;
